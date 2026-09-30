@@ -1,0 +1,73 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+            configure: -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - name: Windows
+            os: windows-latest
+            configure: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build ${{ matrix.configure }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        shell: bash
+        run: ./build/TapPanZeitTests_artefacts/Release/TapPanZeitTests
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent build/TapPanZeit_artefacts/Release/VST3/TapPanZeit.vst3 dist/TapPanZeit-macOS-VST3.zip
+          ditto -c -k --keepParent build/TapPanZeit_artefacts/Release/AU/TapPanZeit.component dist/TapPanZeit-macOS-AU.zip
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path build/TapPanZeit_artefacts/Release/VST3/TapPanZeit.vst3 -DestinationPath dist/TapPanZeit-Windows-VST3.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TapPanZeit-${{ matrix.name }}
+          path: dist/*.zip
+
+  release:
+    name: Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
