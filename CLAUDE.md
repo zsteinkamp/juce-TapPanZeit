@@ -20,4 +20,5 @@ Releases live here (not in the m4l repo) because the `plugins` website syncs the
 - `TapPanZeitTests` is an offline impulse-response test of the processor; run it after DSP changes. CI runs it on macOS and Windows.
 - CI: `.github/workflows/build.yml` builds on push; `v*` tags publish a GitHub Release with zipped VST3/AU.
 - Installers: `installer/macos/build-pkg.sh <version>` (pkgbuild/productbuild → `dist/*.pkg`, installs to `/Library/Audio/Plug-Ins/…`; component plists force `BundleIsRelocatable=NO` or Installer "updates" a stray copy elsewhere instead) and `installer/windows/TapPanZeit.iss` (Inno Setup → `dist/*-Setup.exe`, installs to `{commoncf64}\VST3`, uninstaller kept out of the VST3 folder). Both unsigned for now.
+- `make clean` uninstalls the plug-ins (macOS): removes them from `~/Library/Audio/Plug-Ins` and `/Library/Audio/Plug-Ins` (sudo only if present) and forgets the pkg receipts. It does not touch `build/`.
 - Validate the AU locally with `auval -v aufx Tpzt Zstk` after copying to `~/Library/Audio/Plug-Ins/Components/`.
