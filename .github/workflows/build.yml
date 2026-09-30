@@ -35,24 +35,42 @@ jobs:
         shell: bash
         run: ./build/TapPanZeitTests_artefacts/Release/TapPanZeitTests
 
+      - name: Version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION=0.0.${GITHUB_RUN_NUMBER}-dev" >> "$GITHUB_ENV"
+          fi
+
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p dist
-          ditto -c -k --keepParent build/TapPanZeit_artefacts/Release/VST3/TapPanZeit.vst3 dist/TapPanZeit-macOS-VST3.zip
-          ditto -c -k --keepParent build/TapPanZeit_artefacts/Release/AU/TapPanZeit.component dist/TapPanZeit-macOS-AU.zip
+          ditto -c -k --keepParent build/TapPanZeit_artefacts/Release/VST3/TapPanZeit.vst3 dist/TapPanZeit-$VERSION-macOS-VST3.zip
+          ditto -c -k --keepParent build/TapPanZeit_artefacts/Release/AU/TapPanZeit.component dist/TapPanZeit-$VERSION-macOS-AU.zip
+          installer/macos/build-pkg.sh "$VERSION"
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Compress-Archive -Path build/TapPanZeit_artefacts/Release/VST3/TapPanZeit.vst3 -DestinationPath dist/TapPanZeit-Windows-VST3.zip
+          Compress-Archive -Path build/TapPanZeit_artefacts/Release/VST3/TapPanZeit.vst3 -DestinationPath "dist/TapPanZeit-$env:VERSION-Windows-VST3.zip"
+          $findIscc = { Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe", "$env:ProgramFiles\Inno Setup *\ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 }
+          $iscc = & $findIscc
+          if (-not $iscc) { choco install innosetup -y --no-progress | Out-Null; $iscc = & $findIscc }
+          & $iscc.FullName "/DAppVersion=$env:VERSION" installer\windows\TapPanZeit.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - uses: actions/upload-artifact@v4
         with:
           name: TapPanZeit-${{ matrix.name }}
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/*.pkg
+            dist/*.exe
 
   release:
     name: Release
@@ -69,5 +87,8 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.zip
+          files: |
+            dist/*.pkg
+            dist/*.exe
+            dist/*.zip
           generate_release_notes: true

@@ -4,16 +4,26 @@ A native plugin port of the [TapPanZeit Max for Live device](https://github.com/
 
 Built with [JUCE](https://juce.com). Formats: VST3 (macOS + Windows), AU (macOS), and a Standalone app.
 
-## Download
+## Download & Install
 
-Grab the latest build from the [Releases page](../../releases).
+Grab the latest installer from the [Releases page](../../releases).
 
-- **Windows:** unzip and copy `TapPanZeit.vst3` to `C:\Program Files\Common Files\VST3\`.
-- **macOS:** unzip and copy `TapPanZeit.vst3` to `~/Library/Audio/Plug-Ins/VST3/` and/or `TapPanZeit.component` to `~/Library/Audio/Plug-Ins/Components/`. The builds are not notarized yet, so macOS may block them; clear the quarantine flag with:
+- **Windows:** run `TapPanZeit-<version>-Windows-Setup.exe`. It installs the VST3 into `C:\Program Files\Common Files\VST3\`. Because the installer isn't code-signed, Windows SmartScreen may say "Windows protected your PC" — click **More info → Run anyway**. Uninstall from Settings → Apps.
+- **macOS:** open `TapPanZeit-<version>-macOS.pkg`. It installs the VST3 into `/Library/Audio/Plug-Ins/VST3/` and the Audio Unit into `/Library/Audio/Plug-Ins/Components/` (click **Customize** to install just one). Because the installer isn't notarized yet, macOS will first refuse to open it — go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the TapPanZeit message.
+
+Then rescan plug-ins in your DAW; TapPanZeit is listed under **Zack Steinkamp**.
+
+<details>
+<summary>Manual install (zip files)</summary>
+
+- **Windows:** copy `TapPanZeit.vst3` into `C:\Program Files\Common Files\VST3\`.
+- **macOS:** copy `TapPanZeit.vst3` into `~/Library/Audio/Plug-Ins/VST3/` and/or `TapPanZeit.component` into `~/Library/Audio/Plug-Ins/Components/`, then clear the download quarantine flag:
 
   ```sh
   xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/TapPanZeit.vst3 ~/Library/Audio/Plug-Ins/Components/TapPanZeit.component
   ```
+
+</details>
 
 ## Usage
 
@@ -40,7 +50,7 @@ Outputs land in `build/TapPanZeit_artefacts/Release/{VST3,AU,Standalone}/`. For 
 
 ## Releases
 
-GitHub Actions builds macOS (universal) and Windows on every push. Pushing a tag like `v1` also publishes a GitHub Release with the zipped plugins attached:
+GitHub Actions builds macOS (universal) and Windows on every push. Pushing a tag like `v1` also publishes a GitHub Release with the installers (`installer/macos/build-pkg.sh`, `installer/windows/TapPanZeit.iss`) and zipped plugins attached:
 
 ```sh
 git tag v1 && git push origin v1
